@@ -3,7 +3,8 @@
 
 /*
  TO DO:
-  set max_diff_ in constructor 
+  + set max_diff_ in constructor 
+  + who should update the Verlet list?????
 */
 
 
@@ -49,12 +50,12 @@ template <class Potential>
 class SystemEDBD {
  public:
   SystemEDBD(unsigned long int seed,
-         double system_size_x,
-         double system_size_y,
-         double system_size_z,
-         double dt,
-         double verlet_list_radius,
-         Potential potential);
+             double system_size_x,
+             double system_size_y,
+             double system_size_z,
+             double dt,
+             double verlet_list_radius,
+             Potential potential);
 
   void SetPositions(const std::vector<Vec3>& positions);
 
@@ -175,7 +176,9 @@ void SystemEDBD<Potential>::SetPositions(
   std::vector<std::vector<unsigned int> >(number_of_particles_,
     std::vector<unsigned int>(number_of_particles_));
 
-  number_of_neighbors_ = std::vector<unsigned int>(number_of_particles_);
+  number_of_neighbors_ =
+    std::vector<unsigned int>(number_of_particles_);
+
   velocities_ = std::vector<Vec3>(number_of_particles_);
   UpdateVerletList();
 }
