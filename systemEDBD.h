@@ -4,7 +4,7 @@
 /*
  TO DO:
 
-  + Implement MakeCollision
+  + Test MakeCollision
   + Implement GetNextCollision
 
   + set max_diff_ in constructor 
@@ -208,7 +208,6 @@ void SystemEDBD<Potential>::Integrate(double delta_time)
 template <class Potential>
 void SystemEDBD<Potential>::MakeTimeStep(double dt)
 {
-
   UpdateVelocities(dt);
 
   unsigned int p1, p2;
@@ -264,6 +263,29 @@ void SystemEDBD<Potential>::MoveBallistically(double dt)
 
   time_ += dt;
 }
+
+template <class Potential>
+void SystemEDBD<Potential>::MakeCollision(unsigned int p1, unsigned int p2)
+{
+     
+  Vec3 dr = positions_[p1] - positions_[p2];
+  if (system_size_x_ > 0) dr.x -=
+        system_size_x_ * round(dr.x/system_size_x_);
+	if (system_size_y_ > 0) dr.y -=
+        system_size_y_ * round(dr.y/system_size_y_);
+	if (system_size_z_ > 0) dr.z -=
+        system_size_z_ * round(dr.z/system_size_z_);
+
+  Vec3 n_perp = dr / dr.Length();
+
+  Vec3 dv = velocities_[p1] - velocities_[p2];
+
+  double a = dv.DotProduct(n_perp);
+
+  velocities_[p1] -= n_perp * a;
+  velocities_[p2] += n_perp * a;
+}
+
 
 template <class Potential>
 void SystemEDBD<Potential>::SavePositions(std::string name) const
