@@ -2,3 +2,4 @@
 *.exe
 *.o
 *.dat
+data/*
