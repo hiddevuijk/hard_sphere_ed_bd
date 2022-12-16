@@ -304,6 +304,25 @@ template <class Potential>
 void SystemEDBD<Potential>::GetNextCollision(unsigned int& p1,
         unsigned int& p2, double& dt_collision ) const
 {
+  // no collision found yet
+  dt_collision = -1; 
+
+  double dt_pi_pj; // collision time of pi and pj
+  int pj;
+  for (unsigned int pi = 0; pi < number_of_particles_; ++pi) {
+    // pi_n is neighbor number n of particle pi
+    for (unsigned int pi_n = 0;
+          pi_n < number_of_neighbors_[pi_n]; ++pi_n){
+      // pj is the particle index of neighbor pi_n
+      pj = verlet_list_[pi][pi_n]; 
+      dt_pi_pj = PairTime(pi, pj); 
+      if (dt_pi_pj > 0 and dt_pi_pj < dt_collision) {
+        p1 = pi;
+        p2 = pj;
+        dt_collision = dt_pi_pj;
+      }
+    }
+  }
 }
 
 template <class Potential>
