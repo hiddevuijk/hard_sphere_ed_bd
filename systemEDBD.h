@@ -59,7 +59,8 @@ class SystemEDBD {
              double system_size_z,
              double dt,
              double verlet_list_radius,
-             Potential potential);
+             Potential potential,
+             double D, double gamma);
 
   void SetR(unsigned int i, double x, double y, double z)
     {positions_[i].x=x;positions_[i].y=y; positions_[i].z=z;}
@@ -171,7 +172,8 @@ SystemEDBD<Potential>::SystemEDBD(
   double system_size_z,
   double dt,
   double verlet_list_radius,
-  Potential potential)
+  Potential potential,
+  double D, double gamma)
   : normal_distribution_(0.0, 1.0),
     random_number_generator_(seed),
     random_normal_distribution_(random_number_generator_,
@@ -183,7 +185,8 @@ SystemEDBD<Potential>::SystemEDBD(
     verlet_list_radius_(verlet_list_radius),
     potential_(potential),
     number_of_verlet_list_updates_(0),
-    time_(0.0)
+    time_(0.0),
+    D_(D), gamma_(gamma)
 {
 
   max_diff_ = 1.0;
@@ -223,6 +226,8 @@ void SystemEDBD<Potential>::Integrate(double delta_time)
 template <class Potential>
 void SystemEDBD<Potential>::MakeTimeStep(double dt)
 {
+  if (dt <= 0) return;
+
   UpdateVelocities(dt);
 
   unsigned int p1, p2;
@@ -253,7 +258,7 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
   bool update_verlet_list = false;
 
   for (unsigned int i = 0; i < number_of_particles_; ++i) {
-    velocities_[i] = 0;
+    velocities_[i] *= 0;
     velocities_[i] =
         dt * potential_.Force(positions_[i], time_) / gamma_;
 

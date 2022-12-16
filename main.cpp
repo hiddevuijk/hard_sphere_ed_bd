@@ -1,5 +1,9 @@
 
+
+#include "config_file.h"
+#include "vec3.h"
 #include "systemEDBD.h"
+#include "initialize_positions.h"
 
 #include <iostream>
 #include <vector>
@@ -19,68 +23,60 @@ class Potential {
 
 int main()
 {
-  unsigned long int seed = 1234567890;
-  double system_size_x = -1;
-  double system_size_y = -1;
-  double system_size_z = -1;
-  double dt = 1e-4;
-  double verlet_list_radius = 3.0;
+
+  Config params("input.txt");
+  
+  double D = params.get_parameter<double>("D");
+  double gamma = params.get_parameter<double>("gamma");
+
+  unsigned long int seed =
+		params.get_parameter<unsigned long int>("seed");
+
+  double system_size_x =
+		params.get_parameter<double>("system_size_x");
+  double system_size_y =
+		params.get_parameter<double>("system_size_y");
+  double system_size_z =
+		params.get_parameter<double>("system_size_z");
+
+  unsigned int N =
+		params.get_parameter<double>("N");
+
+  double dt = params.get_parameter<double>("dt");
+
+  double verlet_list_radius =
+		params.get_parameter<double>("verlet_list_radius");
+
+  double equilibration_time = 
+         params.get_parameter<double>("equilibration_time");
+  double time_between_samples = 
+         params.get_parameter<double>("time_between_samples");
+  unsigned int number_of_samples = 
+         params.get_parameter<unsigned int>("number_of_samples");
+
+  std::vector<Vec3>  positions = initialize_position(N, 3,
+      system_size_x,system_size_y, system_size_z);
 
   Potential pot;  
 
   
-  SystemEDBD<Potential> system(seed, system_size_x, system_size_y, system_size_z, dt, verlet_list_radius, pot);
+  SystemEDBD<Potential> system(seed, system_size_x, system_size_y, system_size_z, dt, verlet_list_radius, pot, D, gamma);
 
 
-  Vec3 r1(0, 0, 0);
-  Vec3 r2(3, 0, 0);
+  system.SetPositions(positions);
 
-  Vec3 v1, v2;
+  system.Integrate(equilibration_time);
+
+
+  for (unsigned int i = 0; i < number_of_samples; ++i) {
+    string name = "data/positions_" + to_string(i) + ".dat";
+    system.SavePositions(name);
+    system.Integrate(time_between_samples);
+  } 
  
-  vector<Vec3> pos;
-  pos.push_back(r1);
-  pos.push_back(r2);
+  string name = "data/positions.dat";
+  system.SavePositions(name);
 
-
-
-  system.SetPositions(pos);
-
-  system.SetV(0,  0.0, 0.0, 0.0);
-  system.SetV(1, -1.0, 0.0, 0.0);
-  
-  system.MoveBallistically(1.0);
-
-  r1 = system.GetPosition(0);
-  r2 = system.GetPosition(1);
-  v1 = system.GetVelocity(0);
-  v2 = system.GetVelocity(1);
-
-  cout << "at collision: \n";
-  cout << "r: \n";
-
-  cout << "\t" <<  r1 << endl;
-  cout << "\t" <<  r2 << endl;
-
-  cout << "v: \n";
-  cout <<  "\t" << v1 << endl;
-  cout <<  "\t" << v2 << endl;
-
-  system.MakeCollision(0,1);
-
-  r1 = system.GetPosition(0);
-  r2 = system.GetPosition(1);
-  v1 = system.GetVelocity(0);
-  v2 = system.GetVelocity(1);
-
-  cout << "after collision: \n";
-  cout << "r: \n";
-
-  cout << "\t" <<  r1 << endl;
-  cout << "\t" <<  r2 << endl;
-
-  cout << "v: \n";
-  cout <<  "\t" << v1 << endl;
-  cout <<  "\t" << v2 << endl;
 
 
   return 0;

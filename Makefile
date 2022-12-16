@@ -13,7 +13,7 @@ LFLAGS = -Wall -g
 $(TARGET): $(OBJS)
 	$(CC) $(LFLAGS) $(OBJS) -o $(TARGET)
 
-main.o: main.cpp vec3.h config_file.h systemEDBD.h
+main.o: main.cpp vec3.h config_file.h systemEDBD.h initialize_positions.h
 	$(CC) $(CFLAGS) $(INC) main.cpp
 
 
