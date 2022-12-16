@@ -14,12 +14,12 @@ std::vector<Vec3> initialize_position(
   int nx = 0;
   int ny = 0;
   Vec3 temp; 
-  while ((nx + 1) * d < Lx ) {
-    while ((ny + 1) * d < Ly ) {
+  while (nx * d < Lx ) {
+    while (ny * d < Ly ) {
       temp.x = d * nx; 
       temp.y = d * ny; 
-      ny += 1;    
       lattice.push_back(temp);
+      ny += 1;    
     }
     nx += 1;
   }

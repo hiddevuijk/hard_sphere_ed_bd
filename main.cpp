@@ -68,13 +68,15 @@ int main()
   system.Integrate(equilibration_time);
 
 
+  string name; 
   for (unsigned int i = 0; i < number_of_samples; ++i) {
     string name = "data/positions_" + to_string(i) + ".dat";
     system.SavePositions(name);
     system.Integrate(time_between_samples);
+    cout << system.GetNColl() << endl;
   } 
  
-  string name = "data/positions.dat";
+  name = "data/positions.dat";
   system.SavePositions(name);
 
 

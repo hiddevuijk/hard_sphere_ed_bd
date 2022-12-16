@@ -69,6 +69,7 @@ class SystemEDBD {
     {velocities_[i].x=vx;velocities_[i].y=vy;velocities_[i].z=vz;}
   Vec3 GetPosition(unsigned int i) { return positions_[i]; }
   Vec3 GetVelocity(unsigned int i) { return velocities_[i]; }
+  unsigned int GetNColl() const { return Ncoll; }
 
   void SetPositions(const std::vector<Vec3>& positions);
 
@@ -161,6 +162,8 @@ class SystemEDBD {
   double D_;
   double gamma_;
 
+
+  unsigned int Ncoll;
 };
 
 
@@ -187,6 +190,7 @@ SystemEDBD<Potential>::SystemEDBD(
     number_of_verlet_list_updates_(0),
     time_(0.0),
     D_(D), gamma_(gamma)
+    ,Ncoll(0)
 {
 
   max_diff_ = 1.0;
@@ -267,7 +271,10 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
     velocities_[i].y +=
         sqrt_2_dt * random_normal_distribution_();
     velocities_[i].z +=
-        sqrt_2_dt * random_normal_distribution_();
+       sqrt_2_dt * random_normal_distribution_();
+
+    // REMOVE
+    velocities_[i].z *= 0; 
 
     double dist = systemEDBD_helper::distance_squared(positions_[i],
                   positions_at_last_update_[i], system_size_x_,
@@ -352,7 +359,7 @@ void SystemEDBD<Potential>::GetNextCollision(unsigned int& p1,
 template <class Potential>
 void SystemEDBD<Potential>::MakeCollision(unsigned int p1, unsigned int p2)
 {
-     
+  Ncoll += 1; 
   Vec3 dr = positions_[p1] - positions_[p2];
   // periodic boundary conditions
   if (system_size_x_ > 0) dr.x -=
