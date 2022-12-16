@@ -5,7 +5,7 @@
  TO DO:
 
   + Test MakeCollision
-  + Implement GetNextCollision
+  + Test GetNextCollision
 
   + set max_diff_ in constructor 
   + who should update the Verlet list?????
@@ -61,6 +61,11 @@ class SystemEDBD {
              double verlet_list_radius,
              Potential potential);
 
+  void SetR(unsigned int i, double x, double y, double z)
+    {positions_[i].x=x;positions_[i].y=y; positions_[i].z=z;}
+  void SetV(unsigned int i, double vx, double vy, double vz)
+    {velocities_[i].x=vx;velocities_[i].y=vy;velocities_[i].z=vz;}
+
   void SetPositions(const std::vector<Vec3>& positions);
 
   void MakeTimeStep(double dt);
@@ -104,6 +109,9 @@ class SystemEDBD {
   double PairTime(unsigned int p1, unsigned int p2) const;
 
   // Move all particles v_i * dt forward
+  // This is the only method that moves the system
+  // forward in time. 
+  // Other methods can only do so by calling MoveBallistically.
   void MoveBallistically(double dt);
 
   // p1 and p2 are colliding, so reset velocities
@@ -218,10 +226,14 @@ void SystemEDBD<Potential>::MakeTimeStep(double dt)
   double dt_collision;
 
   GetNextCollision(p1, p2, dt_collision);
-
+  
+  // if collision happens within dt
   while (dt_collision < dt) {
+    // move particles untill next collision
     MoveBallistically(dt_collision);
+    // collide particles
     MakeCollision(p1, p2);
+
     dt -= dt_collision;
     GetNextCollision(p1, p2, dt_collision);
   }
@@ -305,7 +317,9 @@ void SystemEDBD<Potential>::GetNextCollision(unsigned int& p1,
         unsigned int& p2, double& dt_collision ) const
 {
   // no collision found yet
-  dt_collision = -1; 
+  // set to dt_, because any collision time longer 
+  // than that is not important
+  dt_collision = dt_; 
 
   double dt_pi_pj; // collision time of pi and pj
   int pj;
@@ -316,7 +330,7 @@ void SystemEDBD<Potential>::GetNextCollision(unsigned int& p1,
       // pj is the particle index of neighbor pi_n
       pj = verlet_list_[pi][pi_n]; 
       dt_pi_pj = PairTime(pi, pj); 
-      if (dt_pi_pj > 0 and dt_pi_pj < dt_collision) {
+      if (dt_pi_pj < dt_collision) {
         p1 = pi;
         p2 = pj;
         dt_collision = dt_pi_pj;
