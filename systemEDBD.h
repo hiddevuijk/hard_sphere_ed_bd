@@ -63,8 +63,11 @@ class SystemEDBD {
 
   void SetR(unsigned int i, double x, double y, double z)
     {positions_[i].x=x;positions_[i].y=y; positions_[i].z=z;}
+
   void SetV(unsigned int i, double vx, double vy, double vz)
     {velocities_[i].x=vx;velocities_[i].y=vy;velocities_[i].z=vz;}
+  Vec3 GetPosition(unsigned int i) { return positions_[i]; }
+  Vec3 GetVelocity(unsigned int i) { return velocities_[i]; }
 
   void SetPositions(const std::vector<Vec3>& positions);
 
@@ -88,7 +91,7 @@ class SystemEDBD {
 	// initialize the particles on a square lattice
 	void RandomInit(unsigned int number_of_particles);
 
- private:
+ //private:
 
 
   const boost::normal_distribution<double> normal_distribution_;
@@ -308,7 +311,8 @@ double SystemEDBD<Potential>::PairTime(unsigned int p1, unsigned int p2) const
   // particles don't collide
   if (determinant <= 0) return -1;
 
-  return - (dr_dv + sqrt(determinant)) / dv.LengthSquared();
+  double dtc=  - (dr_dv + sqrt(determinant)) / dv.LengthSquared();
+  return dtc;
 }
 
 
@@ -327,10 +331,11 @@ void SystemEDBD<Potential>::GetNextCollision(unsigned int& p1,
     // pi_n is neighbor number n of particle pi
     for (unsigned int pi_n = 0;
           pi_n < number_of_neighbors_[pi_n]; ++pi_n){
+
       // pj is the particle index of neighbor pi_n
       pj = verlet_list_[pi][pi_n]; 
       dt_pi_pj = PairTime(pi, pj); 
-      if (dt_pi_pj < dt_collision) {
+      if (dt_pi_pj < dt_collision and dt_pi_pj > 0) {
         p1 = pi;
         p2 = pj;
         dt_collision = dt_pi_pj;
