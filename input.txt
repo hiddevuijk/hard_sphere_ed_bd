@@ -12,6 +12,6 @@ dt = 1e-3
 verlet_list_radius = 4.0
 
 equilibration_time = 0.0
-time_between_samples = 1.0
-number_of_samples = 10
+time_between_samples = 0.1
+number_of_samples = 100
 
