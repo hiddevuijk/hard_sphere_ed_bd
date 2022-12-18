@@ -4,6 +4,7 @@
 #include "vec3.h"
 #include "systemEDBD.h"
 #include "initialize_positions.h"
+#include "pair_correlation.h"
 
 #include <iostream>
 #include <vector>
@@ -48,11 +49,21 @@ int main()
 		params.get_parameter<double>("verlet_list_radius");
 
   double equilibration_time = 
-         params.get_parameter<double>("equilibration_time");
+        params.get_parameter<double>("equilibration_time");
   double time_between_samples = 
-         params.get_parameter<double>("time_between_samples");
+        params.get_parameter<double>("time_between_samples");
   unsigned int number_of_samples = 
-         params.get_parameter<unsigned int>("number_of_samples");
+        params.get_parameter<unsigned int>("number_of_samples");
+
+
+   unsigned int number_of_bins =
+        params.get_parameter<unsigned int>("number_of_bins");
+  double bin_size = params.get_parameter<double>("bin_size"); 
+
+	PairCorrelation pcorr(number_of_bins, bin_size,system_size_x,
+                        system_size_y, system_size_z);
+
+
 
   std::vector<Vec3>  positions = initialize_position(N, 3,
       system_size_x,system_size_y, system_size_z);
@@ -72,14 +83,18 @@ int main()
   for (unsigned int i = 0; i < number_of_samples; ++i) {
     string name = "data/positions_" + to_string(i) + ".dat";
     system.SavePositions(name);
+
+    pcorr.sample(system.GetPositions());
+
     system.Integrate(time_between_samples);
-    cout << system.GetNColl() << endl;
+    //cout << system.GetNColl() << endl;
   } 
  
   name = "data/positions.dat";
   system.SavePositions(name);
 
-
+  name = "data/pcorr.dat";
+  pcorr.write(name);
 
   return 0;
 }

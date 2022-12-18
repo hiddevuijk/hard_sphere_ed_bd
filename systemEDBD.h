@@ -189,8 +189,8 @@ SystemEDBD<Potential>::SystemEDBD(
     potential_(potential),
     number_of_verlet_list_updates_(0),
     time_(0.0),
-    D_(D), gamma_(gamma)
-    ,Ncoll(0)
+    D_(D), gamma_(gamma),
+    Ncoll(0)
 {
 
   max_diff_ = 1.0;
@@ -273,8 +273,6 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
     velocities_[i].z +=
        sqrt_2_dt * random_normal_distribution_();
 
-    // REMOVE
-    velocities_[i].z *= 0; 
 
     double dist = systemEDBD_helper::distance_squared(positions_[i],
                   positions_at_last_update_[i], system_size_x_,
