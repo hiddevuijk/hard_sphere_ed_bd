@@ -278,9 +278,6 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
     velocities_[i].z +=
        sqrt_2_dt * random_normal_distribution_();
 
-    // REMOVE
-    velocities_[i].z *= 0; 
-
     //double dist = systemEDBD_helper::distance_squared(positions_[i],
     //              positions_at_last_update_[i], system_size_x_,
     //              system_size_y_, system_size_z_);
@@ -383,9 +380,6 @@ void SystemEDBD<Potential>::MakeCollision(unsigned int p1, unsigned int p2)
   velocities_[p1] -= n_perp * a;
   velocities_[p2] += n_perp * a;
 
-  // REMOVE
-  velocities_[p1].z = 0;
-  velocities_[p2].z = 0;
 }
 
 
