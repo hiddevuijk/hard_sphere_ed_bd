@@ -378,6 +378,10 @@ void SystemEDBD<Potential>::MakeCollision(unsigned int p1, unsigned int p2)
 
   velocities_[p1] -= n_perp * a;
   velocities_[p2] += n_perp * a;
+
+  // REMOVE
+  velocities_[p1].z = 0;
+  velocities_[p2].z = 0;
 }
 
 
