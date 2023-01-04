@@ -96,6 +96,8 @@ class SystemEDBD {
 	// initialize the particles on a square lattice
 	void RandomInit(unsigned int number_of_particles);
 
+  bool CheckOverlaps() const;
+
  //private:
 
 
@@ -430,6 +432,22 @@ void SystemEDBD<Potential>::UpdateVerletList()
 
 }
 
+template <class Potential>
+bool SystemEDBD<Potential>::CheckOverlaps() const
+{
+
+  bool overlap = false;
+  for (unsigned int i = 0; i < number_of_particles_; ++i) {
+  for (unsigned int j = i + 1; j < number_of_particles_; ++j) {
+    Vec3 dr = positions_[i] - positions_[j];
+    if (dr.Length() < 1.0)  {
+      overlap = true;
+      break;
+    }
+  }}
+
+  return overlap;
+}
 
 #endif
 
