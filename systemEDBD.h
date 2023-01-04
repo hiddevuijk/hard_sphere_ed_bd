@@ -341,7 +341,6 @@ void SystemEDBD<Potential>::GetNextCollision(unsigned int& p1,
   dt_collision = dt_; 
 
   double dt_pi_pj; // collision time of pi and pj
-  int pj;
   for (unsigned int pi = 0; pi < number_of_particles_; ++pi) {
     // pi_n is neighbor number n of particle pi
     for (unsigned int pj = pi + 1;
