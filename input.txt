@@ -5,7 +5,7 @@ system_size_x = 5.0
 system_size_y = 5.0
 system_size_z = 5.0
 
-N = 2
+N = 3
 
 dt = 1e-3
 
@@ -13,5 +13,5 @@ verlet_list_radius = 4.0
 
 equilibration_time = 0.0
 time_between_samples = 0.1
-number_of_samples = 100
+number_of_samples = 10000
 
