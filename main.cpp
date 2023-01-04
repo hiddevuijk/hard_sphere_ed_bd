@@ -75,11 +75,6 @@ int main()
     system.Integrate(time_between_samples);
     cout << system.GetNColl() << endl;
 
-    bool overlap = system.CheckOverlaps();
-    if (overlap == true) {
-      cout << "FUCK!!" << endl;
-      break;
-    }
   } 
  
   name = "data/positions.dat";

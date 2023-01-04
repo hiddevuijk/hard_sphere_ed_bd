@@ -9,9 +9,6 @@
 
   + set max_diff_ in constructor 
 
-  + Verlet list is not used
-
-  + z direction is not updated
 */
 
 
@@ -77,6 +74,7 @@ class SystemEDBD {
   void SetPositions(const std::vector<Vec3>& positions);
 
   void MakeTimeStep(double dt);
+  void RetakeTimeStep(double dt);
   void Integrate(double delta_t);
 
   void SavePositions(std::string name) const;
@@ -260,11 +258,34 @@ void SystemEDBD<Potential>::MakeTimeStep(double dt)
 }
 
 template <class Potential>
+void SystemEDBD<Potential>::RetakeTimeStep(double dt)
+{
+  if (dt <= 0) return;
+
+  unsigned int p1, p2;
+  double dt_collision;
+
+  GetNextCollision(p1, p2, dt_collision);
+  
+  // if collision happens within dt
+  while (dt_collision < dt) {
+    // move particles untill next collision
+    MoveBallistically(dt_collision);
+    // collide particles
+    MakeCollision(p1, p2);
+
+    dt -= dt_collision;
+    GetNextCollision(p1, p2, dt_collision);
+  }
+
+  MoveBallistically(dt);
+
+}
+template <class Potential>
 void SystemEDBD<Potential>::UpdateVelocities(double dt)
 {
 
   double sqrt_2_dt = sqrt(2 * D_ / dt);
-  bool update_verlet_list = false;
 
   for (unsigned int i = 0; i < number_of_particles_; ++i) {
     velocities_[i] *= 0;
@@ -278,18 +299,42 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
     velocities_[i].z +=
        sqrt_2_dt * random_normal_distribution_();
 
-    //double dist = systemEDBD_helper::distance_squared(positions_[i],
-    //              positions_at_last_update_[i], system_size_x_,
-    //              system_size_y_, system_size_z_);
-    //if (dist > max_diff_ * max_diff_) update_verlet_list = true;
   }
   
-  if (update_verlet_list) UpdateVerletList();
 }
 
 template <class Potential>
 void SystemEDBD<Potential>::MoveBallistically(double dt)
 {
+
+  bool update_verlet_list = false;
+  Vec3 new_position_i;
+  for (unsigned int i = 0; i < number_of_particles_; ++i) {
+    new_position_i = positions_[i] + velocities_[i] * dt;
+
+
+    // check if Verlet list needs to be updated
+    double dist = systemEDBD_helper::distance_squared(
+        new_position_i, positions_at_last_update_[i],
+        system_size_x_, system_size_y_, system_size_z_);
+
+    if (dist > max_diff_ * max_diff_) {
+      update_verlet_list = true;
+      break;
+    }
+
+  }
+
+  // If one of the particles moved to far
+  // the Verlet list needs to be updated,
+  // and the time step needs to be retaken
+  // (i.e. recalculate the next collision etc.).
+  if (update_verlet_list) {
+    UpdateVerletList();
+    RetakeTimeStep(dt);
+  }
+
+  // move particles 
   for (unsigned int i = 0; i < number_of_particles_; ++i) {
     positions_[i] += velocities_[i] * dt;
   }
@@ -297,6 +342,28 @@ void SystemEDBD<Potential>::MoveBallistically(double dt)
   time_ += dt;
 }
 
+//template <class Potential>
+//void SystemEDBD<Potential>::MoveBallistically(double dt)
+//{
+//
+//  bool update_verlet_list = false;
+//  for (unsigned int i = 0; i < number_of_particles_; ++i) {
+//    positions_[i] += velocities_[i] * dt;
+//
+//
+//    // check if Verlet list needs to be updated
+//    double dist = systemEDBD_helper::distance_squared(
+//        positions_[i], positions_at_last_update_[i],
+//        system_size_x_, system_size_y_, system_size_z_);
+//
+//    if (dist > max_diff_ * max_diff_) update_verlet_list = true;
+//
+//  }
+//
+//  if (update_verlet_list) UpdateVerletList();
+//
+//  time_ += dt;
+//}
 
 template <class Potential>
 double SystemEDBD<Potential>::PairTime(unsigned int p1, unsigned int p2) const
@@ -340,11 +407,13 @@ void SystemEDBD<Potential>::GetNextCollision(unsigned int& p1,
   dt_collision = dt_; 
 
   double dt_pi_pj; // collision time of pi and pj
+  unsigned int pj;
   for (unsigned int pi = 0; pi < number_of_particles_; ++pi) {
     // pi_n is neighbor number n of particle pi
-    for (unsigned int pj = pi + 1;
-          pj < number_of_particles_; ++pj){
+    for (unsigned int pi_n = 0;
+        pi_n< number_of_neighbors_[pi]; ++pi_n){
 
+      pj = verlet_list_[pi][pi_n];
       dt_pi_pj = PairTime(pi, pj); 
       if (dt_pi_pj < dt_collision and dt_pi_pj > 0) {
         p1 = pi;
