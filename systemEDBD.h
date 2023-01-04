@@ -8,7 +8,10 @@
   + Test GetNextCollision
 
   + set max_diff_ in constructor 
-  + who should update the Verlet list?????
+
+  + Verlet list is not used
+
+  + z direction is not updated
 */
 
 
@@ -276,10 +279,10 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
     // REMOVE
     velocities_[i].z *= 0; 
 
-    double dist = systemEDBD_helper::distance_squared(positions_[i],
-                  positions_at_last_update_[i], system_size_x_,
-                  system_size_y_, system_size_z_);
-    if (dist > max_diff_ * max_diff_) update_verlet_list = true;
+    //double dist = systemEDBD_helper::distance_squared(positions_[i],
+    //              positions_at_last_update_[i], system_size_x_,
+    //              system_size_y_, system_size_z_);
+    //if (dist > max_diff_ * max_diff_) update_verlet_list = true;
   }
   
   if (update_verlet_list) UpdateVerletList();
@@ -341,11 +344,9 @@ void SystemEDBD<Potential>::GetNextCollision(unsigned int& p1,
   int pj;
   for (unsigned int pi = 0; pi < number_of_particles_; ++pi) {
     // pi_n is neighbor number n of particle pi
-    for (unsigned int pi_n = 0;
-          pi_n < number_of_neighbors_[pi_n]; ++pi_n){
+    for (unsigned int pj = pi + 1;
+          pj < number_of_particles_; ++pj){
 
-      // pj is the particle index of neighbor pi_n
-      pj = verlet_list_[pi][pi_n]; 
       dt_pi_pj = PairTime(pi, pj); 
       if (dt_pi_pj < dt_collision and dt_pi_pj > 0) {
         p1 = pi;
