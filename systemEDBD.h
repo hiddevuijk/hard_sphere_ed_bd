@@ -363,12 +363,15 @@ void SystemEDBD<Potential>::MakeCollision(unsigned int p1, unsigned int p2)
   Ncoll += 1; 
   Vec3 dr = positions_[p1] - positions_[p2];
   // periodic boundary conditions
-  if (system_size_x_ > 0) dr.x -=
-        system_size_x_ * round(dr.x/system_size_x_);
-	if (system_size_y_ > 0) dr.y -=
-        system_size_y_ * round(dr.y/system_size_y_);
-	if (system_size_z_ > 0) dr.z -=
-        system_size_z_ * round(dr.z/system_size_z_);
+  if (system_size_x_ > 0) {
+    dr.x -= system_size_x_ * round(dr.x/system_size_x_);
+  }
+	if (system_size_y_ > 0) {
+    dr.y -= system_size_y_ * round(dr.y/system_size_y_);
+  }
+	if (system_size_z_ > 0) {
+    dr.z -= system_size_z_ * round(dr.z/system_size_z_);
+  }
 
   Vec3 n_perp = dr / dr.Length();
 
