@@ -1,17 +1,17 @@
 D = 1.0
 gamma = 1.0
 seed = 123456789
-system_size_x = 5.0
-system_size_y = 5.0
-system_size_z = 5.0
+system_size_x = 15.0
+system_size_y = 15.0
+system_size_z = 15.0
 
-N = 3
+N = 800
 
 dt = 1e-3
 
-verlet_list_radius = 4.0
+verlet_list_radius = 1.1
 
 equilibration_time = 0.0
-time_between_samples = 0.1
-number_of_samples = 10000
+time_between_samples = 0.01
+number_of_samples = 10
 

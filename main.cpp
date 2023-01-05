@@ -54,7 +54,7 @@ int main()
   unsigned int number_of_samples = 
          params.get_parameter<unsigned int>("number_of_samples");
 
-  std::vector<Vec3>  positions = initialize_position(N, 2.1,
+  std::vector<Vec3>  positions = initialize_position(N, 1.1,
       system_size_x,system_size_y, system_size_z);
 
   Potential pot;  
@@ -75,12 +75,17 @@ int main()
     system.Integrate(time_between_samples);
     cout << system.GetNColl() << endl;
 
+    if (system.CheckOverlaps() == true) {
+      cout << "FUCK " << endl;
+      break;
+    }
   } 
  
   name = "data/positions.dat";
   system.SavePositions(name);
 
-
-
+  cout << system.GetNumberOfVerletListUpdates() << endl;
+  cout << (system.verlet_list_radius_ - 1.0) / 2.0 << endl;
+  cout << system.verlet_list_radius_ << endl;
   return 0;
 }

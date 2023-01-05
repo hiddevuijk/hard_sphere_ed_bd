@@ -113,7 +113,7 @@ class SystemEDBD {
         unsigned int& p2, double& dt_collision ) const;
 
   // returns collision time of p1 and p2
-  // is negative if they don't collide
+  // returns a negative number if they don't collide
   double PairTime(unsigned int p1, unsigned int p2) const;
 
   // Move all particles v_i * dt forward
@@ -196,7 +196,7 @@ SystemEDBD<Potential>::SystemEDBD(
     ,Ncoll(0)
 {
 
-  max_diff_ = 1.0;
+  max_diff_ = (verlet_list_radius_ - 1.0) / 2.0;
 }
 
 template <class Potential>
@@ -260,6 +260,28 @@ void SystemEDBD<Potential>::MakeTimeStep(double dt)
 template <class Potential>
 void SystemEDBD<Potential>::RetakeTimeStep(double dt)
 {
+
+  // Check if the max of dt * v_i is not larger than
+  // the max allowed distance between updates of the 
+  // Verlet list.
+  double maxdr = 0;
+  for (unsigned int i = 0; i < number_of_particles_; ++i) {
+    double dr = dt * velocities_[i].Length();
+    if (dr > maxdr) maxdr = dr;
+  }
+
+  // increase the Verlet list radius,
+  // such that max_diff_ = 1.5 x maxdr
+  // because otherwise an infinite loop occurs,
+  if (maxdr > max_diff_) {
+    verlet_list_radius_ = 1.0 + 3 * maxdr;
+    max_diff_ = (verlet_list_radius_ - 1.0) / 2.0;
+    std::cout << "\t" << time_ << "\t" << verlet_list_radius_ << "\t" <<  max_diff_ << std::endl;
+  }
+
+  // update the Verlet list
+  UpdateVerletList();
+
   if (dt <= 0) return;
 
   unsigned int p1, p2;
@@ -300,7 +322,7 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
        sqrt_2_dt * random_normal_distribution_();
 
     // REMOVE
-    velocities_[i].z = 0;
+    //velocities_[i].z = 0;
   }
   
 }
@@ -326,46 +348,22 @@ void SystemEDBD<Potential>::MoveBallistically(double dt)
     }
 
   }
-
   // If one of the particles moved to far
   // the Verlet list needs to be updated,
   // and the time step needs to be retaken
   // (i.e. recalculate the next collision etc.).
   if (update_verlet_list) {
-    UpdateVerletList();
     RetakeTimeStep(dt);
-  }
+  } else {
+    // move particles 
+    for (unsigned int i = 0; i < number_of_particles_; ++i) {
+      positions_[i] += velocities_[i] * dt;
+    }
 
-  // move particles 
-  for (unsigned int i = 0; i < number_of_particles_; ++i) {
-    positions_[i] += velocities_[i] * dt;
+    time_ += dt;
   }
-
-  time_ += dt;
 }
 
-//template <class Potential>
-//void SystemEDBD<Potential>::MoveBallistically(double dt)
-//{
-//
-//  bool update_verlet_list = false;
-//  for (unsigned int i = 0; i < number_of_particles_; ++i) {
-//    positions_[i] += velocities_[i] * dt;
-//
-//
-//    // check if Verlet list needs to be updated
-//    double dist = systemEDBD_helper::distance_squared(
-//        positions_[i], positions_at_last_update_[i],
-//        system_size_x_, system_size_y_, system_size_z_);
-//
-//    if (dist > max_diff_ * max_diff_) update_verlet_list = true;
-//
-//  }
-//
-//  if (update_verlet_list) UpdateVerletList();
-//
-//  time_ += dt;
-//}
 
 template <class Potential>
 double SystemEDBD<Potential>::PairTime(unsigned int p1, unsigned int p2) const
@@ -387,7 +385,7 @@ double SystemEDBD<Potential>::PairTime(unsigned int p1, unsigned int p2) const
   // particles don't collide
   if (dr_dv >= 0) return -1;
 
-  double determinant = dr.LengthSquared() - 4;
+  double determinant = dr.LengthSquared() - 1;
   determinant *= -dv.LengthSquared();
   determinant += dr_dv * dr_dv;
 
@@ -452,8 +450,8 @@ void SystemEDBD<Potential>::MakeCollision(unsigned int p1, unsigned int p2)
   velocities_[p2] += n_perp * a;
 
   // REMOVE
-  velocities_[p1].z = 0;
-  velocities_[p2].z = 0;
+  //velocities_[p1].z = 0;
+  //velocities_[p2].z = 0;
   
 }
 
@@ -478,6 +476,7 @@ template <class Potential>
 void SystemEDBD<Potential>::UpdateVerletList()
 {
   number_of_verlet_list_updates_ += 1;
+
   //std::cout << "update Verlet List\t";
   //std::cout << number_of_verlet_list_updates_ << std::endl;
 
@@ -486,6 +485,7 @@ void SystemEDBD<Potential>::UpdateVerletList()
 
   for (unsigned int i = 0; i < number_of_particles_; ++i) {
     positions_at_last_update_[i] = positions_[i];
+
     for (unsigned int j = i + 1; j < number_of_particles_; ++j) {
       if (systemEDBD_helper::distance_squared(positions_[i],
 				                    positions_[j], system_size_x_,
@@ -506,9 +506,11 @@ bool SystemEDBD<Potential>::CheckOverlaps() const
 {
 
   bool overlap = false;
+  // loop over all particle pairs
   for (unsigned int i = 0; i < number_of_particles_; ++i) {
   for (unsigned int j = i + 1; j < number_of_particles_; ++j) {
     Vec3 dr = positions_[i] - positions_[j];
+    // if distance < diameter, there is an overlap
     if (dr.Length() < 1.0)  {
       overlap = true;
       break;
