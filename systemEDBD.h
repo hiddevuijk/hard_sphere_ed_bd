@@ -28,7 +28,8 @@ namespace systemEDBD_helper {
 
 // calculate square distance between r1 and r2,
 // apply periodic boundaires if L > 0
-double distance_squared(Vec3 r1, Vec3 r2, double Lx, double Ly, double Lz)
+double distance_squared(Vec3 r1, Vec3 r2,
+                        double Lx, double Ly, double Lz)
 {
      
 	r1 -= r2;
@@ -62,19 +63,23 @@ class SystemEDBD {
              Potential potential,
              double D, double gamma);
 
-  void SetR(unsigned int i, double x, double y, double z)
-    {positions_[i].x=x;positions_[i].y=y; positions_[i].z=z;}
+  //void SetR(unsigned int i, double x, double y, double z)
+  //  {positions_[i].x=x;positions_[i].y=y; positions_[i].z=z;}
 
-  void SetV(unsigned int i, double vx, double vy, double vz)
-    {velocities_[i].x=vx;velocities_[i].y=vy;velocities_[i].z=vz;}
+  //void SetV(unsigned int i, double vx, double vy, double vz)
+  //{velocities_[i].x=vx;velocities_[i].y=vy;velocities_[i].z=vz;}
+
   Vec3 GetPosition(unsigned int i) const
     { return positions_[i]; }
+
   std::vector<Vec3> GetPositions() const 
     { return positions_; }
+
   Vec3 GetVelocity(unsigned int i) const
     { return velocities_[i]; }
 
   unsigned int GetNColl() const { return Ncoll; }
+  double GetVerletListRadius() const { return verlet_list_radius_;}
 
   void SetPositions(const std::vector<Vec3>& positions);
 
@@ -100,7 +105,7 @@ class SystemEDBD {
 
   bool CheckOverlaps() const;
 
- //private:
+ private:
 
 
   const boost::normal_distribution<double> normal_distribution_;
@@ -155,7 +160,6 @@ class SystemEDBD {
   // number of neighbors in the Verlet list
   std::vector<unsigned int> number_of_neighbors_;
 
-
   double max_diff_;
 
   Potential potential_;
@@ -168,7 +172,6 @@ class SystemEDBD {
 
   double D_;
   double gamma_;
-
 
   unsigned int Ncoll;
 };
@@ -199,7 +202,6 @@ SystemEDBD<Potential>::SystemEDBD(
     D_(D), gamma_(gamma)
     ,Ncoll(0)
 {
-
   max_diff_ = (verlet_list_radius_ - 1.0) / 2.0;
 }
 
@@ -264,7 +266,6 @@ void SystemEDBD<Potential>::MakeTimeStep(double dt)
 template <class Potential>
 void SystemEDBD<Potential>::RetakeTimeStep(double dt)
 {
-
   // Check if the max of dt * v_i is not larger than
   // the max allowed distance between updates of the 
   // Verlet list.
@@ -324,9 +325,6 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
         sqrt_2_dt * random_normal_distribution_();
     velocities_[i].z +=
        sqrt_2_dt * random_normal_distribution_();
-
-    // REMOVE
-    //velocities_[i].z = 0;
   }
   
 }
@@ -452,11 +450,6 @@ void SystemEDBD<Potential>::MakeCollision(unsigned int p1, unsigned int p2)
 
   velocities_[p1] -= n_perp * a;
   velocities_[p2] += n_perp * a;
-
-  // REMOVE
-  //velocities_[p1].z = 0;
-  //velocities_[p2].z = 0;
-  
 }
 
 

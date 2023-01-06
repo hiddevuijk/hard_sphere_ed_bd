@@ -76,7 +76,10 @@ int main()
 
   system.SetPositions(positions);
 
-  system.Integrate(equilibration_time);
+  while (system.GetTime() < equilibration_time) {
+    system.Integrate(time_between_samples);
+    cout << equilibration_time << "\t"<<system.GetTime() << endl;
+  }
 
 
   string name; 
@@ -85,8 +88,8 @@ int main()
     system.SavePositions(name);
     pair_corr.sample( system.GetPositions() );
     system.Integrate(time_between_samples);
-    cout << system.GetNColl() << endl;
-
+    cout << equilibration_time + number_of_samples * time_between_samples
+         << "\t"<<system.GetTime() << endl;
     if (system.CheckOverlaps() == true) {
       cout << "FUCK " << endl;
       break;
@@ -99,7 +102,8 @@ int main()
   pair_corr.write("data/gr.dat");
 
   cout << system.GetNumberOfVerletListUpdates() << endl;
-  cout << (system.verlet_list_radius_ - 1.0) / 2.0 << endl;
-  cout << system.verlet_list_radius_ << endl;
+  cout << system.GetVerletListRadius() << endl;
+  //cout << (system.verlet_list_radius_ - 1.0) / 2.0 << endl;
+  //cout << system.verlet_list_radius_ << endl;
   return 0;
 }

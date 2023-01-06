@@ -5,13 +5,13 @@ system_size_x = 15.0
 system_size_y = 15.0
 system_size_z = 15.0
 
-N = 400
+N = 1200
 
-dt = 1e-4
+dt = 1e-3
 
-verlet_list_radius = 1.25
+verlet_list_radius = 2.0
 
-equilibration_time = 40.0
+equilibration_time = 15.0
 time_between_samples = 0.01
 number_of_samples = 500
 
