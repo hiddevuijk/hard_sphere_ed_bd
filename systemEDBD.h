@@ -67,8 +67,13 @@ class SystemEDBD {
 
   void SetV(unsigned int i, double vx, double vy, double vz)
     {velocities_[i].x=vx;velocities_[i].y=vy;velocities_[i].z=vz;}
-  Vec3 GetPosition(unsigned int i) { return positions_[i]; }
-  Vec3 GetVelocity(unsigned int i) { return velocities_[i]; }
+  Vec3 GetPosition(unsigned int i) const
+    { return positions_[i]; }
+  std::vector<Vec3> GetPositions() const 
+    { return positions_; }
+  Vec3 GetVelocity(unsigned int i) const
+    { return velocities_[i]; }
+
   unsigned int GetNColl() const { return Ncoll; }
 
   void SetPositions(const std::vector<Vec3>& positions);
@@ -79,7 +84,6 @@ class SystemEDBD {
 
   void SavePositions(std::string name) const;
 
-  std::vector<Vec3> GetPositions() const { return positions_;}
 
   long unsigned int GetNumberOfVerletListUpdates() const
     { return number_of_verlet_list_updates_;}
