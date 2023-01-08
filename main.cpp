@@ -6,6 +6,7 @@
 #include "initialize_positions.h"
 
 #include "pair_correlation.h"
+#include "density.h"
 
 #include <iostream>
 #include <vector>
@@ -17,9 +18,11 @@ using namespace std;
 class Potential {
  public:
   Vec3 Force(Vec3 r, double t) {
-    Vec3 f(0, 0, 0);
+    Vec3 f(0, 0, -r.z);
     return f;
   }
+
+  bool is_nonzero;
 };
 
 
@@ -63,12 +66,20 @@ int main()
         params.get_parameter<double>("bin_size");
   double bulk_density = N / (system_size_x * system_size_y * system_size_z);
 
+
+   double zmax = params.get_parameter<double>("zmax");
+   double zmin = params.get_parameter<double>("zmin");
+
+   Density density(zmin, zmax, number_of_bins, 'z',
+                   system_size_x * system_size_y);
+
   PairCorrelation pair_corr(number_of_bins, bin_size, bulk_density, system_size_x, system_size_y, system_size_z);
 
   std::vector<Vec3>  positions = initialize_position(N, 1.1,
-      system_size_x,system_size_y, system_size_z);
+      0, system_size_x,0, system_size_y, zmin, zmax);
 
   Potential pot;  
+  pot.is_nonzero = true;
 
   
   SystemEDBD<Potential> system(seed, system_size_x, system_size_y, system_size_z, dt, verlet_list_radius, pot, D, gamma);
@@ -84,25 +95,27 @@ int main()
 
   string name; 
   for (unsigned int i = 0; i < number_of_samples; ++i) {
-    string name = "data/positions_" + to_string(i) + ".dat";
-    system.SavePositions(name);
-    pair_corr.sample( system.GetPositions() );
+    //string name = "data/positions_" + to_string(i) + ".dat";
+    //system.SavePositions(name);
+    //pair_corr.sample( system.GetPositions() );
+    density.Sample( system.GetPositions() );
     system.Integrate(time_between_samples);
     cout << equilibration_time + number_of_samples * time_between_samples
          << "\t"<<system.GetTime() << endl;
-    if (system.CheckOverlaps() == true) {
-      cout << "FUCK " << endl;
-      break;
-    }
   } 
- 
+  
   name = "data/positions.dat";
   system.SavePositions(name);
 
-  pair_corr.write("data/gr.dat");
+  //pair_corr.write("data/gr.dat");
+  density.Write("rhoz.dat");
 
-  cout << system.GetNumberOfVerletListUpdates() << endl;
-  cout << system.GetVerletListRadius() << endl;
+  cout << "\n";
+  cout << pair_corr.GetNumberOfSamplesIgnored() << endl;
+  cout << pair_corr.GetNumberOfSamples() << endl;
+
+  //cout << system.GetNumberOfVerletListUpdates() << endl;
+  //cout << system.GetVerletListRadius() << endl;
   //cout << (system.verlet_list_radius_ - 1.0) / 2.0 << endl;
   //cout << system.verlet_list_radius_ << endl;
   return 0;

@@ -25,8 +25,8 @@ public:
     std::vector<double> GetBins() const {return bins;}
 
 	// get current number of samples taken
-	int GetNumberOfSamples() { return number_of_samples_;}
-	int GetNumberOfSamplesIgnored() { return number_of_samples_ignored_;}
+	long unsigned int GetNumberOfSamples() { return number_of_samples_;}
+	long unsigned int GetNumberOfSamplesIgnored() { return number_of_samples_ignored_;}
 
 	// write to out stream
 	void write(std::ostream & out);
@@ -47,10 +47,10 @@ private:
                         // does not contribute to the pair 
                         // correlation
 
-	unsigned int number_of_samples_;	// number of samples
+	long unsigned int number_of_samples_;	// number of samples
 
   // number of samples with distance > max_distance
-  unsigned int number_of_samples_ignored_;
+  long unsigned int number_of_samples_ignored_;
 
 	std::vector<double> bins;	// mid values of the bins 
 	std::vector<double> gr;		// pair correlation function
@@ -100,7 +100,7 @@ void PairCorrelation::sample( const std::vector<Vec3>& particles )
       }
       double d = r.Length();
       if(d < max_distance_) {
-        gr[ (int)(d / bin_size_)] += 2.;
+        gr[ (int)(d / bin_size_)] += 2.0;
         number_of_samples_ += 1;
       } else {
         number_of_samples_ignored_ += 1;
@@ -152,8 +152,7 @@ void PairCorrelation::write(std::ostream & out)
 
 void PairCorrelation::write(std::string outname)
 {
-
-    std::vector<double> gr_current = GetPairCorrelation();
+  std::vector<double> gr_current = GetPairCorrelation();
 
 	std::ofstream out;
 	out.open(outname);

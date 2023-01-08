@@ -89,6 +89,7 @@ class SystemEDBD {
 
   void SavePositions(std::string name) const;
 
+  Potential& GetPotential() { return potential_;}
 
   long unsigned int GetNumberOfVerletListUpdates() const
     { return number_of_verlet_list_updates_;}
@@ -316,8 +317,9 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
 
   for (unsigned int i = 0; i < number_of_particles_; ++i) {
     velocities_[i] *= 0;
+
     velocities_[i] =
-        dt * potential_.Force(positions_[i], time_) / gamma_;
+        potential_.Force(positions_[i], time_) / gamma_;
 
     velocities_[i].x +=
         sqrt_2_dt * random_normal_distribution_();
