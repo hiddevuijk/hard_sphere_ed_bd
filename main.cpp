@@ -7,6 +7,7 @@
 
 #include "pair_correlation.h"
 #include "density.h"
+#include "read_positions.h"
 
 #include <iostream>
 #include <vector>
@@ -75,8 +76,10 @@ int main()
 
   PairCorrelation pair_corr(number_of_bins, bin_size, bulk_density, system_size_x, system_size_y, system_size_z);
 
-  std::vector<Vec3>  positions = initialize_position(N, 1.1,
-      0, system_size_x,0, system_size_y, zmin, zmax);
+  //std::vector<Vec3>  positions = initialize_position(N, 1.1,
+  //    0, system_size_x,0, system_size_y, zmin, zmax);
+
+  std::vector<Vec3> positions = read_positions("positions.dat");
 
   Potential pot;  
   pot.is_nonzero = true;

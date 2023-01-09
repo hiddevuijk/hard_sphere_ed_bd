@@ -12,9 +12,9 @@ dt = 1e-3
 
 verlet_list_radius = 1.15
 
-equilibration_time = 100
+equilibration_time = 0
 time_between_samples = 0.05
-number_of_samples = 3000
+number_of_samples = 100
 
 number_of_bins = 1000
 bin_size = 0.1
