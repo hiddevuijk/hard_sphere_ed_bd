@@ -18,7 +18,10 @@ std::vector<Vec3> read_positions(std::string positions_data_name)
   file.open(positions_data_name);
 
   if (!file.is_open()) {
-    // ERROR
+    std::cerr << "ERROR: \n";
+    std::cerr << positions_data_name;
+    std::cerr << " could not be opened.\n";
+    exit(1);
   }
 
   Vec3 temp;
