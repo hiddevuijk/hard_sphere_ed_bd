@@ -17,17 +17,42 @@
 #include <fstream>
 #include <iomanip>
 #include <vector>
+#include <list>
 #include <algorithm>
 #include <cmath>
 #include <string>
 #include <boost/random.hpp>
 
 #include "vec3.h"
+#include "neighbor_list.h"
 
 namespace systemEDBD_helper {
 
 // calculate square distance between r1 and r2,
 // apply periodic boundaires if L > 0
+double distance_squared(Vec3 r1, Vec3 r2,
+                      double Lx, double Ly, double Lz,
+                      bool pbc_x, bool pbc_y, bool pbc_z)
+{
+  r1 -= r2;
+
+  if (pbc_x) {
+    r1.x = fabs(r1.x);
+    r1.x -= static_cast<int>(r1.x / Lx + 0.5) * Lx;
+  }
+  if (pbc_y) {
+    r1.y = fabs(r1.y);
+    r1.y -= static_cast<int>(r1.y / Ly + 0.5) * Ly;
+  }
+  if (pbc_z) {
+    r1.z = fabs(r1.z);
+    r1.z -= static_cast<int>(r1.z / Lz + 0.5) * Lz;
+  }
+
+	return r1.LengthSquared();
+
+}
+
 double distance_squared(Vec3 r1, Vec3 r2,
                         double Lx, double Ly, double Lz)
 {
@@ -58,6 +83,7 @@ class SystemEDBD {
              double system_size_x,
              double system_size_y,
              double system_size_z,
+             bool pbc_x, bool pbc_y, bool pbc_z,
              double dt,
              double verlet_list_radius,
              Potential potential,
@@ -91,8 +117,8 @@ class SystemEDBD {
 
   Potential& GetPotential() { return potential_;}
 
-  long unsigned int GetNumberOfVerletListUpdates() const
-    { return number_of_verlet_list_updates_;}
+  long unsigned int GetNumberOfNeighborListUpdates() const
+    { return number_of_neighbor_list_updates_;}
 
   void ResetTime() { time_ = 0; }
   void SetTime(double new_time) { time_ = new_time;}
@@ -115,7 +141,7 @@ class SystemEDBD {
         boost::normal_distribution<double> > random_normal_distribution_;
 
 
-  void UpdateVerletList();
+  void UpdateNeighborList();
 
   void UpdateVelocities(double dt);
 
@@ -144,6 +170,10 @@ class SystemEDBD {
   double system_size_y_;
   double system_size_z_;
 
+  bool pbc_x_;
+  bool pbc_y_;
+  bool pbc_z_;
+
   // time step size
   double dt_;
 
@@ -156,17 +186,15 @@ class SystemEDBD {
   // particle velocities
   std::vector<Vec3> velocities_;
 
-  // Verlet list
-  std::vector<std::vector<unsigned int> > verlet_list_;
-  // number of neighbors in the Verlet list
-  std::vector<unsigned int> number_of_neighbors_;
+
+  std::vector<std::list<unsigned int> > neighbor_list_;
 
   double max_diff_;
 
   Potential potential_;
 
   // keep track of the number of Verlet list updates
-  unsigned long int number_of_verlet_list_updates_;
+  unsigned long int number_of_neighbor_list_updates_;
 
   // current time
   double time_;
@@ -184,6 +212,7 @@ SystemEDBD<Potential>::SystemEDBD(
   double system_size_x,
   double system_size_y,
   double system_size_z,
+  bool pbc_x, bool pbc_y, bool pbc_z,
   double dt,
   double verlet_list_radius,
   Potential potential,
@@ -195,10 +224,11 @@ SystemEDBD<Potential>::SystemEDBD(
     system_size_x_(system_size_x),
     system_size_y_(system_size_y),
     system_size_z_(system_size_z),
+    pbc_x_(pbc_x), pbc_y_(pbc_y), pbc_z_(pbc_z),
     dt_(dt),
     verlet_list_radius_(verlet_list_radius),
     potential_(potential),
-    number_of_verlet_list_updates_(0),
+    number_of_neighbor_list_updates_(0),
     time_(0.0),
     D_(D), gamma_(gamma)
     ,Ncoll(0)
@@ -210,20 +240,18 @@ template <class Potential>
 void SystemEDBD<Potential>::SetPositions(
     const std::vector<Vec3>& positions)
 {
+
   number_of_particles_ = positions.size();
   positions_ = positions;
+
   positions_at_last_update_ =
     std::vector<Vec3>(number_of_particles_);
 
-  verlet_list_ =
-  std::vector<std::vector<unsigned int> >(number_of_particles_,
-    std::vector<unsigned int>(number_of_particles_));
-
-  number_of_neighbors_ =
-    std::vector<unsigned int>(number_of_particles_);
+  neighbor_list_ = std::vector<std::list<unsigned int> >(number_of_particles_);
 
   velocities_ = std::vector<Vec3>(number_of_particles_);
-  UpdateVerletList();
+
+  UpdateNeighborList();
 }
 
 template <class Potential>
@@ -285,8 +313,8 @@ void SystemEDBD<Potential>::RetakeTimeStep(double dt)
     std::cout << "\t" << time_ << "\t" << verlet_list_radius_ << "\t" <<  max_diff_ << std::endl;
   }
 
-  // update the Verlet list
-  UpdateVerletList();
+  // update the neighbor list
+  UpdateNeighborList();
 
   if (dt <= 0) return;
 
@@ -319,7 +347,7 @@ void SystemEDBD<Potential>::UpdateVelocities(double dt)
     velocities_[i] *= 0;
 
     velocities_[i] =
-        potential_.Force(positions_[i], time_) / gamma_;
+         potential_.Force(positions_[i], time_) / gamma_;
 
     velocities_[i].x +=
         sqrt_2_dt * random_normal_distribution_();
@@ -335,19 +363,20 @@ template <class Potential>
 void SystemEDBD<Potential>::MoveBallistically(double dt)
 {
 
-  bool update_verlet_list = false;
+  bool update_neighbor_list = false;
   Vec3 new_position_i;
   for (unsigned int i = 0; i < number_of_particles_; ++i) {
     new_position_i = positions_[i] + velocities_[i] * dt;
 
 
-    // check if Verlet list needs to be updated
+    // check if neighbor list needs to be updated
     double dist = systemEDBD_helper::distance_squared(
         new_position_i, positions_at_last_update_[i],
-        system_size_x_, system_size_y_, system_size_z_);
+        system_size_x_, system_size_y_, system_size_z_,
+        pbc_x_, pbc_y_, pbc_z_);
 
     if (dist > max_diff_ * max_diff_) {
-      update_verlet_list = true;
+      update_neighbor_list = true;
       break;
     }
 
@@ -356,7 +385,7 @@ void SystemEDBD<Potential>::MoveBallistically(double dt)
   // the Verlet list needs to be updated,
   // and the time step needs to be retaken
   // (i.e. recalculate the next collision etc.).
-  if (update_verlet_list) {
+  if (update_neighbor_list) {
     RetakeTimeStep(dt);
   } else {
     // move particles 
@@ -411,21 +440,31 @@ void SystemEDBD<Potential>::GetNextCollision(unsigned int& p1,
   dt_collision = dt_; 
 
   double dt_pi_pj; // collision time of pi and pj
-  unsigned int pj;
   for (unsigned int pi = 0; pi < number_of_particles_; ++pi) {
-    // pi_n is neighbor number n of particle pi
-    for (unsigned int pi_n = 0;
-        pi_n< number_of_neighbors_[pi]; ++pi_n){
+    for (std::list<unsigned int>::const_iterator it=neighbor_list_[pi].begin(); it != neighbor_list_[pi].end(); ++it) {
 
-      pj = verlet_list_[pi][pi_n];
-      dt_pi_pj = PairTime(pi, pj); 
+      dt_pi_pj = PairTime(pi, *it); 
       if (dt_pi_pj < dt_collision and dt_pi_pj > 0) {
         p1 = pi;
-        p2 = pj;
+        p2 = *it;
         dt_collision = dt_pi_pj;
       }
     }
   }
+  //for (unsigned int pi = 0; pi < number_of_particles_; ++pi) {
+  //  // pi_n is neighbor number n of particle pi
+  //  for (unsigned int pi_n = 0;
+  //      pi_n< number_of_neighbors_[pi]; ++pi_n){
+
+  //    pj = verlet_list_[pi][pi_n];
+  //    dt_pi_pj = PairTime(pi, pj); 
+  //    if (dt_pi_pj < dt_collision and dt_pi_pj > 0) {
+  //      p1 = pi;
+  //      p2 = pj;
+  //      dt_collision = dt_pi_pj;
+  //    }
+  //  }
+  //}
 }
 
 template <class Potential>
@@ -434,13 +473,13 @@ void SystemEDBD<Potential>::MakeCollision(unsigned int p1, unsigned int p2)
   Ncoll += 1; 
   Vec3 dr = positions_[p1] - positions_[p2];
   // periodic boundary conditions
-  if (system_size_x_ > 0) {
+  if (pbc_x_) {
     dr.x -= system_size_x_ * round(dr.x/system_size_x_);
   }
-	if (system_size_y_ > 0) {
+	if (pbc_y_) {
     dr.y -= system_size_y_ * round(dr.y/system_size_y_);
   }
-	if (system_size_z_ > 0) {
+	if (pbc_z_) {
     dr.z -= system_size_z_ * round(dr.z/system_size_z_);
   }
 
@@ -472,32 +511,17 @@ void SystemEDBD<Potential>::SavePositions(std::string name) const
 
 
 template <class Potential>
-void SystemEDBD<Potential>::UpdateVerletList()
+void SystemEDBD<Potential>::UpdateNeighborList()
 {
-  number_of_verlet_list_updates_ += 1;
+  number_of_neighbor_list_updates_ += 1;
 
-  //std::cout << "update Verlet List\t";
-  //std::cout << number_of_verlet_list_updates_ << std::endl;
 
-  std::fill(number_of_neighbors_.begin(),
-		    number_of_neighbors_.end(), 0);
+  neighbor_list_ = get_neighbor_list(
+          system_size_x_, system_size_y_, system_size_z_,
+          pbc_x_, pbc_y_, pbc_z_,true, verlet_list_radius_,
+          positions_);
 
-  for (unsigned int i = 0; i < number_of_particles_; ++i) {
-    positions_at_last_update_[i] = positions_[i];
-
-    for (unsigned int j = i + 1; j < number_of_particles_; ++j) {
-      if (systemEDBD_helper::distance_squared(positions_[i],
-				                    positions_[j], system_size_x_,
-                                    system_size_y_, system_size_z_)
-			< verlet_list_radius_ * verlet_list_radius_ ) {
-        verlet_list_[i][ number_of_neighbors_[i] ] = j;
-        ++number_of_neighbors_[i];
-        //verlet_list_[j][ number_of_neighbors_[j] ] = i;
-        //++number_of_neighbors_[j];
-      }
-    }
-  }
-
+  positions_at_last_update_ = positions_;
 }
 
 template <class Potential>

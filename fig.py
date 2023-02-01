@@ -11,7 +11,7 @@ dx = x[1] - x[0]
 N = dx * sum(y)
 print(N)
 
-plt.plot(x,y, label="ed bd")
+plt.plot(x,y/N, label="ed bd")
 
 rho = np.loadtxt("../hard_sphere_mc/rhoz.dat")
 x = rho[:,0]
@@ -21,7 +21,7 @@ dx = x[1] - x[0]
 N = dx * sum(y)
 print(N)
 
-plt.plot(x,y, label="mc")
+plt.plot(x,y/N, label="mc")
 
 
 plt.legend()

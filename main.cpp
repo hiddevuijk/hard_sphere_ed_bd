@@ -19,10 +19,11 @@ using namespace std;
 class Potential {
  public:
   Vec3 Force(Vec3 r, double t) {
-    Vec3 f(0, 0, -r.z);
+    Vec3 f(0, 0, -1.0 * U * (r.z - z0) );
     return f;
   }
-
+  double U;
+  double z0;
   bool is_nonzero;
 };
 
@@ -63,29 +64,33 @@ int main()
 
   unsigned int number_of_bins =
         params.get_parameter<unsigned int>("number_of_bins");
-  double bin_size =
-        params.get_parameter<double>("bin_size");
-  double bulk_density = N / (system_size_x * system_size_y * system_size_z);
+  //double bin_size =
+  //      params.get_parameter<double>("bin_size");
+  //double bulk_density = N / (system_size_x * system_size_y * system_size_z);
 
 
-   double zmax = params.get_parameter<double>("zmax");
-   double zmin = params.get_parameter<double>("zmin");
 
-   Density density(zmin, zmax, number_of_bins, 'z',
+  bool pbc_x = true; 
+  bool pbc_y = true;
+  bool pbc_z = false;
+   
+
+   Density density(0, system_size_z, number_of_bins, 'z',
                    system_size_x * system_size_y);
 
-  PairCorrelation pair_corr(number_of_bins, bin_size, bulk_density, system_size_x, system_size_y, system_size_z);
+  //PairCorrelation pair_corr(number_of_bins, bin_size, bulk_density, system_size_x, system_size_y, system_size_z);
 
   //std::vector<Vec3>  positions = initialize_position(N, 1.1,
-  //    0, system_size_x,0, system_size_y, zmin, zmax);
+  //    system_size_x, system_size_y, system_size_z);
 
-  std::vector<Vec3> positions = read_positions("positions.dat");
+  std::vector<Vec3> positions = read_positions("positions_init.dat");
 
   Potential pot;  
+  pot.U = 2.0;
+  pot.z0 = system_size_z / 2.0;
   pot.is_nonzero = true;
-
   
-  SystemEDBD<Potential> system(seed, system_size_x, system_size_y, system_size_z, dt, verlet_list_radius, pot, D, gamma);
+  SystemEDBD<Potential> system(seed, system_size_x, system_size_y, system_size_z,pbc_x, pbc_y,pbc_z, dt, verlet_list_radius, pot, D, gamma);
 
 
   system.SetPositions(positions);
@@ -101,8 +106,8 @@ int main()
     //string name = "data/positions_" + to_string(i) + ".dat";
     //system.SavePositions(name);
     //pair_corr.sample( system.GetPositions() );
-    density.Sample( system.GetPositions() );
     system.Integrate(time_between_samples);
+    density.Sample( system.GetPositions() );
     cout << equilibration_time + number_of_samples * time_between_samples
          << "\t"<<system.GetTime() << endl;
   } 
@@ -113,9 +118,9 @@ int main()
   //pair_corr.write("data/gr.dat");
   density.Write("rhoz.dat");
 
-  cout << "\n";
-  cout << pair_corr.GetNumberOfSamplesIgnored() << endl;
-  cout << pair_corr.GetNumberOfSamples() << endl;
+  //cout << "\n";
+  //cout << pair_corr.GetNumberOfSamplesIgnored() << endl;
+  //cout << pair_corr.GetNumberOfSamples() << endl;
 
   //cout << system.GetNumberOfVerletListUpdates() << endl;
   //cout << system.GetVerletListRadius() << endl;
