@@ -18,12 +18,12 @@ using namespace std;
 
 class Potential {
  public:
-  Vec3 Force(Vec3 r, double t) {
-    Vec3 f(0, 0, -1.0 * U * (r.z - z0) );
-    return f;
+  Vec3 Force(const Vec3& r, double t) {
+    double F = 3.0 * (7.0 - r.z);
+    //F += 25 * (7.0 - r.z) *  (1 - cos(pi100 * t));
+    return Vec3(0,0,F);
   }
-  double U;
-  double z0;
+  double pi100 = 314.1592653589793238462643383279502884197;
   bool is_nonzero;
 };
 
@@ -84,10 +84,8 @@ int main()
   //    system_size_x, system_size_y, system_size_z);
 
   std::vector<Vec3> positions = read_positions("positions_init.dat");
-
+  cout << positions.size() << endl << endl;
   Potential pot;  
-  pot.U = 2.0;
-  pot.z0 = system_size_z / 2.0;
   pot.is_nonzero = true;
   
   SystemEDBD<Potential> system(seed, system_size_x, system_size_y, system_size_z,pbc_x, pbc_y,pbc_z, dt, verlet_list_radius, pot, D, gamma);
@@ -122,8 +120,8 @@ int main()
   //cout << pair_corr.GetNumberOfSamplesIgnored() << endl;
   //cout << pair_corr.GetNumberOfSamples() << endl;
 
-  //cout << system.GetNumberOfVerletListUpdates() << endl;
-  //cout << system.GetVerletListRadius() << endl;
+  cout << system.GetNumberOfNeighborListUpdates() << endl;
+  cout << system.GetNeighborListRadius() << endl;
   //cout << (system.verlet_list_radius_ - 1.0) / 2.0 << endl;
   //cout << system.verlet_list_radius_ << endl;
   return 0;

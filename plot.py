@@ -3,10 +3,10 @@ import matplotlib.pyplot as plt
 from sys import exit
 
 
-gr = np.loadtxt("data/gr.dat")
+data = np.loadtxt("rhoz.dat")
 
-r = gr[:,0]
-y = gr[:,1]
+x = data[:,0]
+y = data[:,1]
 
-plt.plot(r,y)
+plt.plot(x,y)
 plt.show()

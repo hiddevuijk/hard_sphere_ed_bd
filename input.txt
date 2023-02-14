@@ -5,18 +5,18 @@ seed = 123456789
 N = 1000
 system_size_x = 20.0
 system_size_y = 20.0
-system_size_z = 20.0
+system_size_z = 14.0
 
 
-dt = 1e-2
+dt = 1.0e-4
 
-verlet_list_radius = 1.15
+verlet_list_radius = 1.04
 
 equilibration_time = 0
-time_between_samples = 0.05
-number_of_samples = 5000
+time_between_samples = 0.01
+number_of_samples = 10
 
-number_of_bins = 200
+number_of_bins = 140
 bin_size = 0.1
 
 

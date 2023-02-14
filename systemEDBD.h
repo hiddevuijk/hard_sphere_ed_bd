@@ -4,11 +4,6 @@
 /*
  TO DO:
 
-  + Test MakeCollision
-  + Test GetNextCollision
-
-  + set max_diff_ in constructor 
-
 */
 
 
@@ -53,25 +48,6 @@ double distance_squared(Vec3 r1, Vec3 r2,
 
 }
 
-double distance_squared(Vec3 r1, Vec3 r2,
-                        double Lx, double Ly, double Lz)
-{
-     
-	r1 -= r2;
-  if (Lx > 0) r1.x -= Lx * round(r1.x/Lx);
-	if (Ly > 0) r1.y -= Ly * round(r1.y/Ly);
-	if (Lz > 0) r1.z -= Lz * round(r1.z/Lz);
-	return r1.LengthSquared();
-}
-
-double distance(Vec3 r1, Vec3 r2, double Lx, double Ly, double Lz)
-{
-	r1 -= r2;
-  if (Lx > 0) r1.x -= Lx * round(r1.x/Lx);
-	if (Ly > 0) r1.y -= Ly * round(r1.y/Ly);
-	if (Lz > 0) r1.z -= Lz * round(r1.z/Lz);
-	return r1.Length();
-}
 
 };
 
@@ -105,7 +81,7 @@ class SystemEDBD {
     { return velocities_[i]; }
 
   unsigned int GetNColl() const { return Ncoll; }
-  double GetVerletListRadius() const { return verlet_list_radius_;}
+  double GetNeighborListRadius() const { return verlet_list_radius_;}
 
   void SetPositions(const std::vector<Vec3>& positions);
 
@@ -404,12 +380,15 @@ double SystemEDBD<Potential>::PairTime(unsigned int p1, unsigned int p2) const
 
   Vec3 dr = positions_[p1] - positions_[p2];
   // periodic boundary conditions
-  if (system_size_x_ > 0) dr.x -=
-        system_size_x_ * round(dr.x/system_size_x_);
-	if (system_size_y_ > 0) dr.y -=
-        system_size_y_ * round(dr.y/system_size_y_);
-	if (system_size_z_ > 0) dr.z -=
-        system_size_z_ * round(dr.z/system_size_z_);
+  if (system_size_x_ > 0) {
+    dr.x -= system_size_x_ * round(dr.x/system_size_x_);
+  }
+	if (system_size_y_ > 0) {
+    dr.y -= system_size_y_ * round(dr.y/system_size_y_);
+  }
+	if (system_size_z_ > 0) {
+    dr.z -= system_size_z_ * round(dr.z/system_size_z_);
+  }
 
   Vec3 dv = velocities_[p1] - velocities_[p2];
 
